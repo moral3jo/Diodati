@@ -12,8 +12,9 @@ class Arbitrator(ABC):
         pass
 
 class LLMArbitrator(Arbitrator):
-    def __init__(self, model_name: str = "gemini/gemini-1.5-pro"):
-        self.model_name = model_name
+    def __init__(self, reasoning_model: str, formatting_model: str):
+        self.reasoning_model = reasoning_model
+        self.formatting_model = formatting_model
 
     def resolve_turn(self, state: WorldState, actions: List[AgentAction], turn_id: int, simulation_id: str) -> TurnResult:
         # 1. Preparar Contexto
@@ -22,7 +23,7 @@ class LLMArbitrator(Arbitrator):
         # 2. Llamada 1: Razonamiento (Thinking)
         print(f"   [LLM] Razonando turno {turn_id}...")
         reasoning_response = completion(
-            model=self.model_name,
+            model=self.reasoning_model,
             messages=[
                 {"role": "system", "content": self._get_system_prompt_reasoning()},
                 {"role": "user", "content": context_str}
@@ -34,7 +35,7 @@ class LLMArbitrator(Arbitrator):
         # 3. Llamada 2: Formateo (Formatting)
         print(f"   [LLM] Formateando resultado...")
         formatting_response = completion(
-            model=self.model_name, # Usamos el mismo modelo para asegurar coherencia, aunque una versión menor serviría
+            model=self.formatting_model, 
             messages=[
                 {"role": "system", "content": self._get_system_prompt_formatting()},
                 {"role": "user", "content": f"CONTEXTO ORIGINAL:\n{context_str}\n\nTU RAZONAMIENTO:\n{reasoning_content}\n\nGenera AHORA el JSON válido."}
@@ -87,35 +88,51 @@ ACCIONES PROPUESTAS POR LOS AGENTES:
 
     def _get_system_prompt_reasoning(self) -> str:
         return """
-Eres el Árbitro Supremo de una simulación. (Project Sandbox).
-Tu trabajo es decidir qué sucede en el turno basándote en el ESTADO ACTUAL y las ACCIONES de los agentes.
+Eres el Árbitro (Motor Físico) de la simulación Project Sandbox.
+Tu trabajo es decidir fríamente qué sucede basándote en la lógica y los atributos.
 
-REGLAS:
-1. "TALK": Los agentes hablan. Si amenazan o persuaden, decide si tiene efecto en otros agentes basándote en su personalidad (atributos).
-2. "TAKE": Intentar tomar un objeto. 
-   - Si dos agentes intentan tomar el MISMO objeto, decide el ganador basándote en stats o azar.
-   - Si tiene éxito, el objeto pasa al inventario del agente y desaparece de la habitación.
-3. Manten la coherencia física lógica.
-4. Genera una NARRATIVA rica y descriptiva en ESPAÑOL.
+REGLAS DE RESOLUCIÓN:
+1. "TALK": Decide si el mensaje cambia el estado mental del receptor.
+2. "TAKE": Si hay conflicto, gana quien tenga mayor atributo relevante (fuerza, velocidad, hambre) o azar.
+3. CONSECUENCIAS: Sé estricto. Si no tienen el objeto, no pueden usarlo.
 
-Tu salida debe ser un análisis paso a paso de lo que ocurre. No generes JSON todavía.
+REGLAS DE NARRATIVA (IMPORTANTE):
+- Sé CONCISO y OBJETIVO. Estilo "Informe Policial" o "Log de Videojuego".
+- Máximo 2-3 frases.
+- Describe la ACCIÓN física y el RESULTADO.
+- Evita metáforas, drama innecesario o leer la mente de los personajes ("sintió resignación").
+- Céntrate en lo que se ve desde fuera.
+
+Tu salida debe ser un análisis paso a paso de lo que ocurre.
 """
 
     def _get_system_prompt_formatting(self) -> str:
         return """
-Eres un formateador de datos. Tu única tarea es convertir el razonamiento narrativo en una estructura JSON válida que cumpla con el esquema `TurnResult`.
+Eres un formateador de datos JSON.
+Tu tarea:
+1. Extrae los CAMBIOS exactos (CREATE/UPDATE/DELETE) del razonamiento.
+2. Genera un resumen narrativo de UNA sola frase para el campo "narrative".
+3. Devuelve el JSON válido que cumpla con el esquema `TurnResult`.
 
-El esquema debe tener:
+El esquema es:
 {
-  "narrative": "string",
-  "changes": ["string"],
-  "events": ["string"],
+  "narrative": "Resumen de UNA sola frase.",
+  "changes": [
+    {
+       "action": "UPDATE" | "CREATE" | "DELETE",
+       "entity_id": "string",
+       "attribute": "string (opcional)",
+       "value_previous": "any (opcional)",
+       "value_new": "any (opcional)"
+    }
+  ],
+  "events": ["string (etiquetas, ej: 'conflict_resolved')"],
   "world_state": { ... objeto WorldState completo actualizado ... }
 }
 
 IMPORTANTE: 
-- Debes devolver el `world_state` COMPLETO con las modificaciones aplicadas (ej: si un item se movió, actualiza la lista entities).
-- NO inventes campos nuevos.
+- `changes` debe ser una LISTA DE OBJETOS, NO strings. Si no hay cambios de datos, pon [].
+- Debes devolver el `world_state` COMPLETO.
 - Responde SOLO con el JSON.
 """
 

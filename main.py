@@ -1,28 +1,38 @@
-```python
 import asyncio
 import logging
 import os
 from dotenv import load_dotenv
 from app.engine import SimulationEngine
+from app.ai_config import AI_CONFIG
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# ... [logging config] ...
 
 # Cargar variables de entorno
 load_dotenv()
 
+# Configuración LiteLLM (Silenciar logs)
+import litellm
+litellm.set_verbose = False
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+
 # Configuración
 WORLD_CONFIG = "world_init.json"
 
-def main():
-    print("Inicializando Project Sandbox MVP (Con LLM Arbitrator)...")
+async def main():
+    print("Inicializando Project Sandbox MVP (Con LLM Arbitrator Multi-Modelo)...")
     
-    # Verificar API Key
+    # Verificar API Keys
+    if not os.getenv("GROQ_API_KEY"):
+        print("ADVERTENCIA: GROQ_API_KEY faltante. Los modelos de Groq fallarán.")
     if not os.getenv("GEMINI_API_KEY"):
-        print("ADVERTENCIA: GEMINI_API_KEY no encontrada en variables de entorno.")
-    
-    # Inicializar motor con Árbitro LLM
-    engine = SimulationEngine(arbitrator_type="llm")
+        print("ADVERTENCIA: GEMINI_API_KEY faltante. Los modelos de Gemini fallarán.")
+
+    print(f"Configuración IA Loaded:")
+    print(f"- Cerebro: {AI_CONFIG['arbitrator_reasoning']}")
+    print(f"- Formato: {AI_CONFIG['arbitrator_formatting']}")
+
+    # Inicializar motor con Árbitro LLM y Config
+    engine = SimulationEngine(arbitrator_type="llm", ai_config=AI_CONFIG)
     
     # Initialize simulation from config
     sim_id = engine.initialize_simulation(WORLD_CONFIG)

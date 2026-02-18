@@ -61,6 +61,10 @@ class APIDriver(BaseDriver):
     """
     Esqueleto para futura integración con LLMs reales (Fase 1/2).
     """
+    def __init__(self, agent_id: str, model_name: str = "groq/llama-3.1-8b-instant"):
+        super().__init__(agent_id)
+        self.model_name = model_name
+    
     async def get_action(self, visible_state: WorldState) -> AgentAction:
         # TODO: Implementar llamada a API real
         # Por ahora devuelve WAIT

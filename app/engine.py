@@ -13,10 +13,15 @@ from .arbitrator import MockArbitrator, LLMArbitrator
 logger = logging.getLogger(__name__)
 
 class SimulationEngine:
-    def __init__(self, db_path: str = "simulation.db", arbitrator_type: str = "mock"):
+    def __init__(self, db_path: str = "simulation.db", arbitrator_type: str = "mock", ai_config: dict = None):
         self.db = DatabaseLog(db_path)
-        if arbitrator_type == "llm":
-            self.arbitrator = LLMArbitrator()
+        self.ai_config = ai_config or {}
+        
+        if arbitrator_type == "llm" and ai_config:
+            self.arbitrator = LLMArbitrator(
+                reasoning_model=ai_config.get("arbitrator_reasoning"),
+                formatting_model=ai_config.get("arbitrator_formatting")
+            )
         else:
             self.arbitrator = MockArbitrator()
         self.drivers: Dict[str, BaseDriver] = {}
@@ -67,7 +72,9 @@ class SimulationEngine:
                     # Placeholder for scripted
                     self.drivers[entity.id] = ScriptedDriver(entity.id, [])
                 elif entity.driver == 'api':
-                    self.drivers[entity.id] = APIDriver(entity.id)
+                    # Configuración dinámica por agente
+                    model = self.ai_config.get(f"agent_{entity.id}", self.ai_config.get("agent_default"))
+                    self.drivers[entity.id] = APIDriver(entity.id, model_name=model)
                 elif entity.driver == 'human':
                     self.drivers[entity.id] = HumanDriver(entity.id)
                 elif entity.driver == 'static':
