@@ -1,0 +1,18 @@
+{
+    "1": {
+        "action_type": "TALK",
+        "payload": {
+            "message": "Hola Juan, ¿viste ese bocadillo?"
+        }
+    },
+    "2": {
+        "action_type": "TAKE",
+        "target_id": "item_bocadillo_99"
+    },
+    "default": {
+        "action_type": "WAIT",
+        "payload": {
+            "reason": "Esperando..."
+        }
+    }
+}

@@ -1,0 +1,47 @@
+{
+  "room_id": "habitacion_01",
+  "turn_mode": "sequential",
+  "agent_timeout_seconds": 60,
+  "environment": {
+    "temperature": 22,
+    "light_level": 100,
+    "description": "Una sala blanca acolchada sin ventanas."
+  },
+  "entities": [
+    {
+      "id": "item_bocadillo_99",
+      "name": "Bocadillo de Jamón",
+      "type": "item",
+      "tags": [
+        "comestible",
+        "movible"
+      ],
+      "attributes": {
+        "nutricion": 50,
+        "peso": 0.2
+      }
+    },
+    {
+      "id": "agent_juan",
+      "name": "Juan",
+      "type": "agent",
+      "driver": "human",
+      "attributes": {
+        "hambre": 10,
+        "salud": 100,
+        "inventario": []
+      }
+    },
+    {
+      "id": "agent_pedro",
+      "name": "Pedro",
+      "type": "agent",
+      "driver": "static",
+      "attributes": {
+        "hambre": 8,
+        "salud": 100,
+        "inventario": []
+      }
+    }
+  ]
+}
